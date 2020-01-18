@@ -6,15 +6,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ConnectionManager {
-    ExecutorService theadExecutor = Executors.newFixedThreadPool(400);
+    public static void StartConnection() {
+        ExecutorService threadExecutor = Executors.newFixedThreadPool(800);
 
-    public ConnectionManager() {
         try {
             ServerSocket serverSocket = new ServerSocket(7789);
 
-            while(true) {
-                theadExecutor.execute(new ConnectionThread(serverSocket.accept()));
+            while(!serverSocket.isClosed()) {
+                threadExecutor.execute(new ConnectionThread(serverSocket.accept()));
+                //new ConnectionThread(serverSocket.accept());
             }
+
+            threadExecutor.shutdown();
         } catch (IOException e) {
             System.err.println("Fout met gegeven server socket.");
         }
