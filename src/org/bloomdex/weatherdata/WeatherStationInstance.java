@@ -1,10 +1,14 @@
 package org.bloomdex.weatherdata;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class WeatherStationInstance {
     public String stn;
+    private SimpleDateFormat simpleDateFormat;
 
 
     // Weather data array lists
@@ -12,21 +16,43 @@ public class WeatherStationInstance {
 
     public WeatherStationInstance(String stn) {
         this.stn = stn;
+        simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     }
 
     public void addWeatherMeasurement(String[] measurementEntry) {
-        //byte measureArrayIndex = (byte)(index - 3);
         Object[] currentWeatherMeasurement = new Object[14];
 
+        String dateString = "";
+        byte corrOffset = 0;
+        byte corrIndex;
+
         for(byte i = 0; i < measurementEntry.length; i++) {
+            corrIndex = (byte)(i - corrOffset);
+            System.out.println(corrIndex + "   -   " + i);
+
             switch (i) {
-                case 0: case 1: case 2:
-                    currentWeatherMeasurement[i] = measurementEntry[i];
+                case 0:
+                    currentWeatherMeasurement[corrIndex] = measurementEntry[i];
+                    break;
+                case 1: case 2:
+                    if(i == 1) {
+                        dateString = measurementEntry[i];
+                    }
+                    else {
+                        try{
+                            Date parsedDateTime = simpleDateFormat.parse(dateString + " " + measurementEntry[i]);
+                            currentWeatherMeasurement[corrIndex - 1] = (int)(parsedDateTime.getTime()/1000);
+                        }
+                        catch(ParseException e) {}
+
+                        corrOffset = 1;
+                    }
+
                     break;
                 case 3: case 4: case 5: case 6: case 7: case 8: case 9: case 10: case 12:
                     try {
-                        currentWeatherMeasurement[i] = Float.parseFloat(measurementEntry[i]);
-                        addToWeatherDataBuffers(i, currentWeatherMeasurement[i]);
+                        currentWeatherMeasurement[corrIndex] = Float.parseFloat(measurementEntry[i]);
+                        addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
                     }
                     catch(NumberFormatException e) {
                         break;
@@ -35,7 +61,7 @@ public class WeatherStationInstance {
                     break;
                 case 11:
                     try {
-                        currentWeatherMeasurement[i] = Byte.parseByte(measurementEntry[i], 2);
+                        currentWeatherMeasurement[corrIndex] = Byte.parseByte(measurementEntry[i], 2);
                     }
                     catch (NumberFormatException e) {
                         break;
@@ -44,8 +70,8 @@ public class WeatherStationInstance {
                     break;
                 case 13:
                     try {
-                        currentWeatherMeasurement[i] = Short.valueOf(measurementEntry[i]);
-                        addToWeatherDataBuffers(i, currentWeatherMeasurement[i]);
+                        currentWeatherMeasurement[corrIndex] = Short.valueOf(measurementEntry[i]);
+                        addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
                     }
                     catch (NumberFormatException e) {
                         break;
@@ -55,7 +81,7 @@ public class WeatherStationInstance {
             }
         }
 
-        //System.out.println(Arrays.toString(currentWeatherMeasurement) + "\t\t\t" + currentWeatherMeasurements.size());
+        System.out.println(Arrays.toString(currentWeatherMeasurement) + "\t\t\t" + currentWeatherMeasurements.size());
         currentWeatherMeasurements.add(currentWeatherMeasurement);
     }
 
@@ -70,10 +96,11 @@ public class WeatherStationInstance {
         // Get the buffer index
         /* XML to Buffer array conversion table
         XML Line num    Buffer index num
-        3 t/m 10  	    XML num - 3
-        12 en 13        XML num - 4
+        3 t/m 10  	    XML num - 2
+            Skip 11, dus + 1 bij de offset
+        12 en 13        XML num - 3
          */
-        byte bufferIndex = (byte)(xmlIndex - 3);
+        byte bufferIndex = (byte)(xmlIndex - 2);
 
         if(xmlIndex > 10)
             bufferIndex -= 1; // Subtract an extra value according to the XML to Buffer array conversion table
