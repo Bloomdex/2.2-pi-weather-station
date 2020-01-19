@@ -4,11 +4,9 @@ import org.bloomdex.weatherdata.WeatherInstancesManager;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class ConnectionThread implements Runnable{
     private Socket inputSocket;
-    private Socket outputSocket;
 
     public ConnectionThread(Socket recvSocket){
         inputSocket = recvSocket;

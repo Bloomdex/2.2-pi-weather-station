@@ -1,6 +1,5 @@
 package org.bloomdex.weatherdata;
 
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 
 public class WeatherInstancesManager {

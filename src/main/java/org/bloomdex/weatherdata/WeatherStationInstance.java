@@ -28,11 +28,10 @@ public class WeatherStationInstance {
 
         for(byte i = 0; i < measurementEntry.length; i++) {
             corrIndex = (byte)(i - corrOffset);
-            System.out.println(corrIndex + "   -   " + i);
 
             switch (i) {
                 case 0:
-                    currentWeatherMeasurement[corrIndex] = measurementEntry[i];
+                    currentWeatherMeasurement[corrIndex] = Integer.parseInt(measurementEntry[i]);
                     break;
                 case 1: case 2:
                     if(i == 1) {
@@ -54,18 +53,14 @@ public class WeatherStationInstance {
                         currentWeatherMeasurement[corrIndex] = Float.parseFloat(measurementEntry[i]);
                         addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
                     }
-                    catch(NumberFormatException e) {
-                        break;
-                    }
+                    catch(NumberFormatException e) { break; }
 
                     break;
                 case 11:
                     try {
                         currentWeatherMeasurement[corrIndex] = Byte.parseByte(measurementEntry[i], 2);
                     }
-                    catch (NumberFormatException e) {
-                        break;
-                    }
+                    catch (NumberFormatException e) { break; }
 
                     break;
                 case 13:
@@ -73,15 +68,13 @@ public class WeatherStationInstance {
                         currentWeatherMeasurement[corrIndex] = Short.valueOf(measurementEntry[i]);
                         addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
                     }
-                    catch (NumberFormatException e) {
-                        break;
-                    }
+                    catch (NumberFormatException e) { break; }
 
                     break;
             }
         }
 
-        System.out.println(Arrays.toString(currentWeatherMeasurement) + "\t\t\t" + currentWeatherMeasurements.size());
+        System.out.println(Arrays.toString(currentWeatherMeasurement));
         currentWeatherMeasurements.add(currentWeatherMeasurement);
     }
 
