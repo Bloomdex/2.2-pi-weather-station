@@ -2,29 +2,25 @@ package org.bloomdex;
 
 import org.bloomdex.weatherdata.WeatherInstancesManager;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 
 public class ConnectionThread implements Runnable{
     private Socket inputSocket;
+    private byte lastResponsibilityByte = 0;
+    private WeatherInstancesManager weatherInstancesManager;
 
     public ConnectionThread(Socket recvSocket){
         inputSocket = recvSocket;
+        weatherInstancesManager = new WeatherInstancesManager();
     }
 
     @Override
     public void run() {
         try {
-            readXML(inputSocket.getInputStream());
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void readXML(InputStream inputStream) {
-        try {
-            BufferedReader dataIn = new BufferedReader(new InputStreamReader(inputStream));
+            BufferedReader dataIn = new BufferedReader(new InputStreamReader(inputSocket.getInputStream()));
 
             String line;
             byte lineNum = -1;
@@ -34,7 +30,7 @@ public class ConnectionThread implements Runnable{
                 if(line.contains("/MEASUREMENT")) {
                     lineNum = -1;
 
-                    WeatherInstancesManager.updateInstances(currentMeasurement);
+                    weatherInstancesManager.updateInstances(currentMeasurement);
                     currentMeasurement = new String[14];
 
                     continue;
@@ -45,6 +41,7 @@ public class ConnectionThread implements Runnable{
                 }
                 else if(line.contains("/WEATHERDATA")) {
                     lineNum = -1;
+                    checkThreadActions();
                     continue;
                 }
 
@@ -53,9 +50,25 @@ public class ConnectionThread implements Runnable{
                     lineNum += 1;
                 }
             }
+
+            end();
         }
         catch (IOException e) {
             e.printStackTrace();
+            end();
+        }
+    }
+
+    private void end() {
+        Thread.currentThread().interrupt();
+    }
+
+    private void checkThreadActions() {
+        byte currentResponsibilityByte = ConnectionManager.getResponsibilityByte();
+
+        if(lastResponsibilityByte != currentResponsibilityByte) {
+            lastResponsibilityByte = currentResponsibilityByte;
+            weatherInstancesManager.handleData();
         }
     }
 }

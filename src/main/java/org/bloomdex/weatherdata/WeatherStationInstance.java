@@ -3,7 +3,6 @@ package org.bloomdex.weatherdata;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 public class WeatherStationInstance {
@@ -12,7 +11,7 @@ public class WeatherStationInstance {
 
 
     // Weather data array lists
-    private ArrayList<Object[]> currentWeatherMeasurements = new ArrayList<>();
+    private ArrayList<Object[]> currentWeatherMeasurementsArr = new ArrayList<>();
 
     public WeatherStationInstance(String stn) {
         this.stn = stn;
@@ -74,8 +73,12 @@ public class WeatherStationInstance {
             }
         }
 
-        System.out.println(Arrays.toString(currentWeatherMeasurement));
-        currentWeatherMeasurements.add(currentWeatherMeasurement);
+        //System.out.println(Arrays.toString(currentWeatherMeasurement));
+        currentWeatherMeasurementsArr.add(currentWeatherMeasurement);
+    }
+
+    public void clearWeatherMeasurements() {
+        currentWeatherMeasurementsArr = new ArrayList<>();
     }
 
 
@@ -114,5 +117,10 @@ public class WeatherStationInstance {
             weatherDataBufferPointers[bufferIndex] = 0;
         else
             weatherDataBufferPointers[bufferIndex] = currentWeatherDataBufferPointer;
+    }
+
+    public void clearBuffers() {
+        weatherDataBufferArrs = new Object[10][WEATHER_DATA_ARRAY_SIZE];
+        weatherDataBufferPointers = new byte[10];
     }
 }
