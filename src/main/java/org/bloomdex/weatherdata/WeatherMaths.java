@@ -3,7 +3,7 @@ package org.bloomdex.weatherdata;
 public class WeatherMaths {
     public enum DataType { FLOAT, SHORT }
 
-    public static float calcLWMA(Object[] measurements, DataType dataType) {
+    static float calcLWMA(Object[] measurements, DataType dataType) {
         float sumWeightCoefficients = 0;
         float totalWeight = 0;
 
@@ -19,7 +19,7 @@ public class WeatherMaths {
             totalWeight += (i + 1);
         }
 
-        if (totalWeight == 0)
+        if (totalWeight != 465)
             return Float.MIN_VALUE; // Returns the minimum value of a float to avoid having to use Float objects
 
         return sumWeightCoefficients / totalWeight;

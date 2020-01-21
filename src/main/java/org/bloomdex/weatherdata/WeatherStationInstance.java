@@ -3,6 +3,7 @@ package org.bloomdex.weatherdata;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 public class WeatherStationInstance {
@@ -24,81 +25,113 @@ public class WeatherStationInstance {
         String dateString = "";
         byte corrOffset = 0;
         byte corrIndex;
-        byte discardMeasurement = 0;
+        boolean discardMeasurement = false;
 
         for(byte i = 0; i < measurementEntry.length; i++) {
             corrIndex = (byte)(i - corrOffset);
 
-            switch (i) {
-                case 0:
-                    currentWeatherMeasurement[corrIndex] = Integer.parseInt(measurementEntry[i]);
-                    break;
-                case 1: case 2:
-                    if(i == 1) {
-                        dateString = measurementEntry[i];
+            if (i == 0) {
+                currentWeatherMeasurement[corrIndex] = Integer.parseInt(measurementEntry[i]);
+            }
+            else if (i == 1 || i == 2) {
+                if(i == 1) {
+                    dateString = measurementEntry[i];
+                }
+                else {
+                    try{
+                        Date parsedDateTime = simpleDateFormat.parse(dateString + " " + measurementEntry[i]);
+                        currentWeatherMeasurement[corrIndex - 1] = (int)(parsedDateTime.getTime() / 1000);
                     }
-                    else {
-                        try{
-                            Date parsedDateTime = simpleDateFormat.parse(dateString + " " + measurementEntry[i]);
-                            currentWeatherMeasurement[corrIndex - 1] = (int)(parsedDateTime.getTime()/1000);
-                        }
-                        catch(ParseException e) {
-                            discardMeasurement = 1;
-                        }
-
-                        corrOffset = 1;
+                    catch(ParseException e) {
+                        discardMeasurement = true;
                     }
 
-                    break;
-                case 3: case 4: case 5: case 6: case 7: case 8: case 9: case 10: case 12:
-                    try {
-                        currentWeatherMeasurement[corrIndex] = Float.parseFloat(measurementEntry[i]);
-                        addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
-                    }
-                    catch(NumberFormatException e) {
-                        float correctedMeasurement = WeatherMaths.calcLWMA(getWeatherDataBuffer(corrIndex), WeatherMaths.DataType.FLOAT);
+                    corrOffset = 1;
+                }
+            }
+            else if (i == 3) {
+                float expectedTempMeasurement = WeatherMaths.calcLWMA(
+                        getWeatherDataBuffer(corrIndex),
+                        WeatherMaths.DataType.FLOAT);
 
-                        if (correctedMeasurement != Float.MIN_VALUE) {
-                            currentWeatherMeasurement[corrIndex] = correctedMeasurement;
-                            addToWeatherDataBuffers(corrIndex, correctedMeasurement);
-                        }
-                        else
-                            discardMeasurement = 1;
-                    }
+                try {
+                    float tempMeasurement = Float.parseFloat(measurementEntry[i]);
+                    boolean useExpectedTemp = false;
 
-                    break;
-                case 11:
-                    try {
-                        currentWeatherMeasurement[corrIndex] = Byte.parseByte(measurementEntry[i], 2);
-                    }
-                    catch (NumberFormatException e) { break; }
+                    if (expectedTempMeasurement != Float.MIN_VALUE) {
+                        float differPercentage = (expectedTempMeasurement - tempMeasurement) / tempMeasurement;
 
-                    break;
-                case 13:
-                    try {
-                        currentWeatherMeasurement[corrIndex] = Short.valueOf(measurementEntry[i]);
-                        addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
-                    }
-                    catch (NumberFormatException e) {
-                        float correctedMeasurement = WeatherMaths.calcLWMA(getWeatherDataBuffer(corrIndex), WeatherMaths.DataType.SHORT);
-
-                        if (correctedMeasurement != Float.MIN_VALUE) {
-                            currentWeatherMeasurement[corrIndex] = (short)correctedMeasurement;
-                            addToWeatherDataBuffers(corrIndex, (short)correctedMeasurement);
-                        }
-                        else
-                            discardMeasurement = 1;
+                        if (differPercentage <= -0.2 || differPercentage >= 0.2)
+                            useExpectedTemp = true;
                     }
 
-                    break;
+                    if (useExpectedTemp)
+                        currentWeatherMeasurement[corrIndex] = expectedTempMeasurement;
+                    else
+                        currentWeatherMeasurement[corrIndex] = tempMeasurement;
+
+                    addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
+                }
+                catch(NumberFormatException e) {
+                    if (expectedTempMeasurement != Float.MIN_VALUE) {
+                        currentWeatherMeasurement[corrIndex] = expectedTempMeasurement;
+                        addToWeatherDataBuffers(corrIndex, expectedTempMeasurement);
+                    }
+                    else
+                        discardMeasurement = true;
+                }
+            }
+            else if ((i >= 4 && i <= 10) || i == 12) {
+                try {
+                    currentWeatherMeasurement[corrIndex] = Float.parseFloat(measurementEntry[i]);
+                    addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
+                }
+                catch(NumberFormatException e) {
+                    float correctedMeasurement = WeatherMaths.calcLWMA(
+                            getWeatherDataBuffer(corrIndex),
+                            WeatherMaths.DataType.FLOAT);
+
+                    if (correctedMeasurement != Float.MIN_VALUE) {
+                        currentWeatherMeasurement[corrIndex] = correctedMeasurement;
+                        addToWeatherDataBuffers(corrIndex, correctedMeasurement);
+                    }
+                    else
+                        discardMeasurement = true;
+                }
+            }
+            else if (i == 11) {
+                try {
+                    currentWeatherMeasurement[corrIndex] = Byte.parseByte(measurementEntry[i], 2);
+                }
+                catch (NumberFormatException e) {
+                    discardMeasurement = true;
+                }
+            }
+            else if (i == 13) {
+                try {
+                    currentWeatherMeasurement[corrIndex] = Short.valueOf(measurementEntry[i]);
+                    addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
+                }
+                catch (NumberFormatException e) {
+                    float correctedMeasurement = WeatherMaths.calcLWMA(
+                            getWeatherDataBuffer(corrIndex),
+                            WeatherMaths.DataType.SHORT);
+
+                    if (correctedMeasurement != Float.MIN_VALUE) {
+                        currentWeatherMeasurement[corrIndex] = (short)correctedMeasurement;
+                        addToWeatherDataBuffers(corrIndex, (short)correctedMeasurement);
+                    }
+                    else
+                        discardMeasurement = true;
+                }
             }
 
-            if(discardMeasurement == 1)
+            if(discardMeasurement)
                 break;
         }
 
         //System.out.println(Arrays.toString(currentWeatherMeasurement));
-        if(discardMeasurement != 1)
+        if(!discardMeasurement)
             currentWeatherMeasurementsArr.add(currentWeatherMeasurement);
     }
 
@@ -152,10 +185,5 @@ public class WeatherStationInstance {
     private Object[] getWeatherDataBuffer(byte xmlIndex) {
         byte bufferIndex = getWeatherDataBufferIndex(xmlIndex);
         return weatherDataBufferArrs[bufferIndex];
-    }
-
-    public void clearWeatherDataBuffers() {
-        weatherDataBufferArrs = new Object[10][WEATHER_DATA_ARRAY_SIZE];
-        weatherDataBufferPointers = new byte[10];
     }
 }
