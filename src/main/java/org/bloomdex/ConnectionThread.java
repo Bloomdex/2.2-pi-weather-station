@@ -9,11 +9,13 @@ import java.net.Socket;
 
 public class ConnectionThread implements Runnable{
     private Socket inputSocket;
-    private byte lastResponsibilityByte = 0;
+    private byte responsibilityByte;
     private WeatherInstancesManager weatherInstancesManager;
 
-    public ConnectionThread(Socket recvSocket){
+    public ConnectionThread(Socket recvSocket, byte connectionManagerResponsibilityByte){
         inputSocket = recvSocket;
+        responsibilityByte = connectionManagerResponsibilityByte;
+
         weatherInstancesManager = new WeatherInstancesManager();
     }
 
@@ -66,8 +68,12 @@ public class ConnectionThread implements Runnable{
     private void checkThreadActions() {
         byte currentResponsibilityByte = ConnectionManager.getResponsibilityByte();
 
-        if(lastResponsibilityByte != currentResponsibilityByte) {
-            lastResponsibilityByte = currentResponsibilityByte;
+        if(responsibilityByte != currentResponsibilityByte) {
+            if(Thread.currentThread().getName().equals("pool-1-thread-1")) {
+                System.out.println("THREAD 1 IS RESTARTING");
+            }
+
+            responsibilityByte = currentResponsibilityByte;
             weatherInstancesManager.handleData();
         }
     }

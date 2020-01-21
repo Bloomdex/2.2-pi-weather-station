@@ -22,13 +22,4 @@
     <groupId>org.bloomdex</groupId>
     <artifactId>pi-weather-station</artifactId>
     <version>1.0-SNAPSHOT</version>
-
-    <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
-        </dependency>
-    </dependencies>
 </project>

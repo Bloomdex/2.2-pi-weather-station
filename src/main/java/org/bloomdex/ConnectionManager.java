@@ -18,15 +18,14 @@ public class ConnectionManager {
             while(!serverSocket.isClosed()) {
                 if(counterManager == null)
                     counterManager = new CounterManager(10);
-                else
-                    counterManager.reset();
 
-                threadExecutor.execute(new ConnectionThread(serverSocket.accept()));
+                threadExecutor.execute(new ConnectionThread(serverSocket.accept(), responsibilityByte));
             }
 
             threadExecutor.shutdown();
         } catch (IOException e) {
-            System.err.println("Fout met gegeven server socket.");
+            System.err.println("Problem with given socket: .");
+            e.printStackTrace();
         }
     }
 

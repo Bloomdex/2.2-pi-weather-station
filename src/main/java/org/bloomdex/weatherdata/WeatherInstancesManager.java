@@ -21,7 +21,7 @@ public class WeatherInstancesManager {
         // Only clears measurements and buffers for now
         for (WeatherStationInstance weatherStationInstance: weatherStationInstances.values()) {
             weatherStationInstance.clearWeatherMeasurements();
-            weatherStationInstance.clearBuffers();
+            //weatherStationInstance.clearBuffers();
         }
     }
 }
