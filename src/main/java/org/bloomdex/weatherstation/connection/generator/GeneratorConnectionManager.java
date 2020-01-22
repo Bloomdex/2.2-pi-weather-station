@@ -1,25 +1,24 @@
-package org.bloomdex;
+package org.bloomdex.weatherstation.connection.generator;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ConnectionManager {
+public class GeneratorConnectionManager {
     private static byte responsibilityByte = 0;
 
+    /**
+     * Starts a connection to the generator program and created a thread for every connection opened.
+     */
     public static void StartConnection() {
         ExecutorService threadExecutor = Executors.newFixedThreadPool(801);
-        CounterManager counterManager = null;
 
         try {
             ServerSocket serverSocket = new ServerSocket(7789);
 
             while(!serverSocket.isClosed()) {
-                if(counterManager == null)
-                    counterManager = new CounterManager(10);
-
-                threadExecutor.execute(new ConnectionThread(serverSocket.accept(), responsibilityByte));
+                threadExecutor.execute(new GeneratorConnectionThread(serverSocket.accept(), responsibilityByte));
             }
 
             threadExecutor.shutdown();
@@ -29,14 +28,20 @@ public class ConnectionManager {
         }
     }
 
+    /**
+     * Flips the responsibility byte between 0 and 1 for threads to read.
+     */
     public static void flipResponsibilityByte() {
         if(responsibilityByte == 0)
             responsibilityByte = 1;
         else
             responsibilityByte = 0;
 
-        System.out.println("ConnectionManager: Responsibility byte is now " + responsibilityByte);
+        System.out.println("GeneratorConnectionManager: Responsibility byte is now " + responsibilityByte);
     }
 
-    public static byte getResponsibilityByte() { return responsibilityByte; }
+    /**
+     * @return the responsibility byte.
+     */
+    static byte getResponsibilityByte() { return responsibilityByte; }
 }

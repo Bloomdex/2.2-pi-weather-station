@@ -1,8 +1,14 @@
-package org.bloomdex.weatherdata;
+package org.bloomdex.weatherstation.weatherdata;
 
-public class WeatherMaths {
+class WeatherMaths {
     public enum DataType { FLOAT, SHORT }
 
+    /**
+     * Calculate the linearly weighted moving average.
+     * @param measurements data set used by the calculation.
+     * @param dataType data type that the calculation should use.
+     * @return the calculated linearly weighted moving average using the measurements.
+     */
     static float calcLWMA(Object[] measurements, DataType dataType) {
         float sumWeightCoefficients = 0;
         float totalWeight = 0;
