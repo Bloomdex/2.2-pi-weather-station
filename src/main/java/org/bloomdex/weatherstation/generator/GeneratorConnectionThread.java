@@ -1,4 +1,4 @@
-package org.bloomdex.weatherstation.connection.generator;
+package org.bloomdex.weatherstation.generator;
 
 import org.bloomdex.weatherstation.weatherdata.WeatherInstancesManager;
 

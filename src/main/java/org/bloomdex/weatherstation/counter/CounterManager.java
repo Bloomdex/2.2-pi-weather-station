@@ -1,6 +1,6 @@
 package org.bloomdex.weatherstation.counter;
 
-import org.bloomdex.weatherstation.connection.generator.GeneratorConnectionManager;
+import org.bloomdex.weatherstation.generator.GeneratorConnectionManager;
 
 import java.util.Timer;
 

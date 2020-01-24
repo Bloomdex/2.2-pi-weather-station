@@ -1,5 +1,6 @@
 package org.bloomdex.weatherstation.weatherdata;
 
+import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ class WeatherStationInstance {
     // region Measurement operations
 
     private SimpleDateFormat simpleDateFormat;
-    private ArrayList<Object[]> currentWeatherMeasurementsArr = new ArrayList<>();
+    private ArrayList<byte[]> currentWeatherMeasurementsArr = new ArrayList<>();
 
     WeatherStationInstance() {
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -21,7 +22,8 @@ class WeatherStationInstance {
      * @param measurementEntry the measurement entry that needs to be added to the instance.
      */
     void addWeatherMeasurement(String[] measurementEntry) {
-        Object[] currentWeatherMeasurement = new Object[14];
+        byte[] currentWeatherMeasurement = new byte[47];
+        byte currentWMPointer = 0;
 
         String dateString = ""; // Data that is being constructed in the for loop
         byte corrOffset = 0; // Offset used by the corrIndex based on position in the measurementEntry array
@@ -29,11 +31,16 @@ class WeatherStationInstance {
         boolean discardMeasurement = false; // Boolean that tells whether this measurement should be discarded or not
 
         for(byte i = 0; i < measurementEntry.length; i++) {
+            String measurementString = measurementEntry[i];
+
             // Calculate the corrIndex based on measurementEntry array position
             corrIndex = (byte)(i - corrOffset);
 
             if (i == 0) {
-                currentWeatherMeasurement[corrIndex] = Integer.parseInt(measurementEntry[i]);
+                for (byte measurementByte : ByteBuffer.allocate(4).putInt(Integer.parseInt(measurementString)).array()) {
+                    currentWeatherMeasurement[currentWMPointer] = measurementByte;
+                    currentWMPointer += 1;
+                }
             }
             else if (i == 1 || i == 2) {
                 if(i == 1) {
@@ -42,7 +49,12 @@ class WeatherStationInstance {
                 else {
                     try{
                         Date parsedDateTime = simpleDateFormat.parse(dateString + " " + measurementEntry[i]);
-                        currentWeatherMeasurement[corrIndex - 1] = (int)(parsedDateTime.getTime() / 1000);
+                        int parsedMeasurement = (int)(parsedDateTime.getTime() / 1000);
+
+                        for (byte measurementByte : ByteBuffer.allocate(4).putInt(parsedMeasurement).array()) {
+                            currentWeatherMeasurement[currentWMPointer] = measurementByte;
+                            currentWMPointer += 1;
+                        }
                     }
                     catch(ParseException e) {
                         // Operation failed because date or time had an error, discard the measurement
@@ -52,12 +64,12 @@ class WeatherStationInstance {
                     corrOffset = 1;
                 }
             }
-            else if ((i >= 3 && i <= 10) || i == 12) {
+            else if (i <= 10 || i == 12) {
                 float expectedMeasurement = WeatherMaths.calcLWMA(
                         getWeatherDataBuffer(corrIndex),
                         WeatherMaths.DataType.FLOAT);
 
-                try {
+                if (measurementString.length() != 0) {
                     float currentMeasurement = Float.parseFloat(measurementEntry[i]);
 
                     // Check if the measurementEntry array position is at the temperature measurement
@@ -73,14 +85,22 @@ class WeatherStationInstance {
                         }
                     }
 
-                    currentWeatherMeasurement[corrIndex] = currentMeasurement;
-                    addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
+                    for (byte measurementByte : ByteBuffer.allocate(4).putFloat(currentMeasurement).array()) {
+                        currentWeatherMeasurement[currentWMPointer] = measurementByte;
+                        currentWMPointer += 1;
+                    }
+
+                    addToWeatherDataBuffers(corrIndex, currentMeasurement);
                 }
-                catch(NumberFormatException e) {
+                else {
                     // Given measurement could not be converted to a float,
                     // calculate an expected measurement based on the past measurements present in the buffer
                     if (expectedMeasurement != Float.MIN_VALUE) {
-                        currentWeatherMeasurement[corrIndex] = expectedMeasurement;
+                        for (byte measurementByte : ByteBuffer.allocate(4).putFloat(expectedMeasurement).array()) {
+                            currentWeatherMeasurement[currentWMPointer] = measurementByte;
+                            currentWMPointer += 1;
+                        }
+
                         addToWeatherDataBuffers(corrIndex, expectedMeasurement);
                     }
                     else // Given measurement was incorrect and could not be corrected, discard the measurement
@@ -88,20 +108,25 @@ class WeatherStationInstance {
                 }
             }
             else if (i == 11) {
-                try {
-                    currentWeatherMeasurement[corrIndex] = Byte.parseByte(measurementEntry[i], 2);
+                if (measurementString.length() != 0) {
+                    currentWeatherMeasurement[currentWMPointer] = Byte.parseByte(measurementEntry[i], 2);
+                    currentWMPointer += 1;
                 }
-                catch (NumberFormatException e) {
+                else {
                     // Given measurement was missing and cannot be corrected using extrapolation, discard the measurement
                     discardMeasurement = true;
                 }
             }
             else if (i == 13) {
-                try {
-                    currentWeatherMeasurement[corrIndex] = Short.valueOf(measurementEntry[i]);
-                    addToWeatherDataBuffers(corrIndex, currentWeatherMeasurement[corrIndex]);
+                if (measurementString.length() != 0) {
+                    for (byte measurementByte : ByteBuffer.allocate(2).putShort(Short.valueOf(measurementEntry[i])).array()) {
+                        currentWeatherMeasurement[currentWMPointer] = measurementByte;
+                        currentWMPointer += 1;
+                    }
+
+                    addToWeatherDataBuffers(corrIndex, Short.valueOf(measurementEntry[i]));
                 }
-                catch (NumberFormatException e) {
+                else {
                     // Given measurement could not be converted to a short,
                     // calculate an expected measurement based on the past measurements present in the buffer
                     float expectedMeasurement = WeatherMaths.calcLWMA(
@@ -109,7 +134,11 @@ class WeatherStationInstance {
                             WeatherMaths.DataType.SHORT);
 
                     if (expectedMeasurement != Float.MIN_VALUE) {
-                        currentWeatherMeasurement[corrIndex] = (short)expectedMeasurement;
+                        for (byte measurementByte : ByteBuffer.allocate(2).putShort((short)expectedMeasurement).array()) {
+                            currentWeatherMeasurement[currentWMPointer] = measurementByte;
+                            currentWMPointer += 1;
+                        }
+
                         addToWeatherDataBuffers(corrIndex, (short)expectedMeasurement);
                     }
                     else // Given measurement was incorrect and could not be corrected, discard the measurement
@@ -121,9 +150,9 @@ class WeatherStationInstance {
                 break;
         }
 
-        //System.out.println(Arrays.toString(currentWeatherMeasurement));
         if(!discardMeasurement) {
             currentWeatherMeasurementsArr.add(currentWeatherMeasurement);
+            System.out.println(currentWMPointer);
             System.out.println(Arrays.toString(currentWeatherMeasurement));
         }
     }

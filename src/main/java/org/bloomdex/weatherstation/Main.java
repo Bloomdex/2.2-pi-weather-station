@@ -1,6 +1,6 @@
 package org.bloomdex.weatherstation;
 
-import org.bloomdex.weatherstation.connection.generator.GeneratorConnectionManager;
+import org.bloomdex.weatherstation.generator.GeneratorConnectionManager;
 import org.bloomdex.weatherstation.counter.CounterManager;
 
 public class Main {
