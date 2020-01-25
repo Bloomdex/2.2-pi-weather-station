@@ -6,11 +6,11 @@ public class WeatherInstancesManager {
     private HashMap<String, WeatherStationInstance> weatherStationInstances = new HashMap<>();
 
     /**
-     * Add a measurement to matching weather station instance based on station number if it exists.
-     * @param measurement measurement that needs to be added to the matching weather station instance.
+     * Add a xmlSet to matching weather station instance based on station number if it exists.
+     * @param xmlSet xmlSet that needs to be parsed by the matching weather station instance.
      */
-    public void updateInstances(String[] measurement) {
-        getWeatherStationInstance(measurement[0]).addWeatherMeasurement(measurement);
+    public void updateInstances(String[] xmlSet) {
+        getWeatherStationInstance(xmlSet[0]).parseXMLSet(xmlSet);
     }
 
     /**
@@ -31,7 +31,7 @@ public class WeatherInstancesManager {
      */
     public void handleData() {
         for (WeatherStationInstance weatherStationInstance: weatherStationInstances.values()) {
-            weatherStationInstance.clearWeatherMeasurements();
+            weatherStationInstance.clearParsedMeasurements();
             //weatherStationInstance.clearBuffers();
         }
     }

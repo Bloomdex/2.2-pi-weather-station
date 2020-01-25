@@ -4,75 +4,56 @@ import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 class WeatherStationInstance {
     // region Measurement operations
 
     private SimpleDateFormat simpleDateFormat;
-    private ArrayList<byte[]> currentWeatherMeasurementsArr = new ArrayList<>();
+    private ArrayList<byte[]> parsedMeasurementsArr = new ArrayList<>();
 
     WeatherStationInstance() {
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     }
 
     /**
-     * Add a mearuement entry to the instance after data has been checked and corrected if needed.
-     * @param measurementEntry the measurement entry that needs to be added to the instance.
+     * Add a measurement set to the instance after given XML has been parsed, checked and corrected if needed.
+     * @param xmlSet the XML set that needs to be parsed by and added to the instance.
      */
-    void addWeatherMeasurement(String[] measurementEntry) {
-        byte[] currentWeatherMeasurement = new byte[47];
-        byte currentWMPointer = 0;
-
-        String dateString = ""; // Data that is being constructed in the for loop
-        byte corrOffset = 0; // Offset used by the corrIndex based on position in the measurementEntry array
-        byte corrIndex; // Used when doing buffer operations or when adding to the currentWeatherMeasurement object
+    void parseXMLSet(String[] xmlSet) {
+        byte[] convertedBytesArr = new byte[47];
+        byte convertedByteArrIndex = 0;
+        byte corrIndex; // Used when doing buffer operations
+        byte xmlLinesSkipped = 0; // Offset used by the corrIndex based on position in the XML set
         boolean discardMeasurement = false; // Boolean that tells whether this measurement should be discarded or not
 
-        for(byte i = 0; i < measurementEntry.length; i++) {
-            String measurementString = measurementEntry[i];
+        for (byte i = 0; i < xmlSet.length; i++) {
+            Object measurementToBeBuffered = null;
+            byte[] convertedMeasurementToBeSaved = null;
+            corrIndex = (byte)(i - xmlLinesSkipped); // Calculate the corrIndex based on xmlSet array position
 
-            // Calculate the corrIndex based on measurementEntry array position
-            corrIndex = (byte)(i - corrOffset);
+            if (i == 0)
+                convertedMeasurementToBeSaved = ByteBuffer.allocate(4).putInt(Integer.parseInt(xmlSet[i])).array();
+            else if (i == 2) {
+                try{
+                    Date dateTime = simpleDateFormat.parse(xmlSet[i-1] + " " + xmlSet[i]);
+                    int parsedDateTime = (int)(dateTime.getTime() / 1000);
 
-            if (i == 0) {
-                for (byte measurementByte : ByteBuffer.allocate(4).putInt(Integer.parseInt(measurementString)).array()) {
-                    currentWeatherMeasurement[currentWMPointer] = measurementByte;
-                    currentWMPointer += 1;
+                    convertedMeasurementToBeSaved = ByteBuffer.allocate(Integer.BYTES).putInt(parsedDateTime).array();
+                    xmlLinesSkipped = 1; // We skipped the second line with index 1
                 }
+                catch(ParseException e) { discardMeasurement = true; }
             }
-            else if (i == 1 || i == 2) {
-                if(i == 1) {
-                    dateString = measurementEntry[i];
-                }
-                else {
-                    try{
-                        Date parsedDateTime = simpleDateFormat.parse(dateString + " " + measurementEntry[i]);
-                        int parsedMeasurement = (int)(parsedDateTime.getTime() / 1000);
-
-                        for (byte measurementByte : ByteBuffer.allocate(4).putInt(parsedMeasurement).array()) {
-                            currentWeatherMeasurement[currentWMPointer] = measurementByte;
-                            currentWMPointer += 1;
-                        }
-                    }
-                    catch(ParseException e) {
-                        // Operation failed because date or time had an error, discard the measurement
-                        discardMeasurement = true;
-                    }
-
-                    corrOffset = 1;
-                }
-            }
-            else if (i <= 10 || i == 12) {
+            else if (i >= 3 && i <= 10 || i == 12) {
+                // calculate an expected measurement based on the past measurements present in the buffer
                 float expectedMeasurement = WeatherMaths.calcLWMA(
-                        getWeatherDataBuffer(corrIndex),
+                        getMeasurementBuffer(corrIndex),
                         WeatherMaths.DataType.FLOAT);
 
-                if (measurementString.length() != 0) {
-                    float currentMeasurement = Float.parseFloat(measurementEntry[i]);
+                if (xmlSet[i].length() != 0) {
+                    float currentMeasurement = Float.parseFloat(xmlSet[i]);
 
-                    // Check if the measurementEntry array position is at the temperature measurement
+                    // Check if the xmlSet array position is at the temperature measurement
                     if (i == 3) {
                         // Temperature measurement should be handled with extra correction and checks
                         if (expectedMeasurement != Float.MIN_VALUE) {
@@ -85,64 +66,54 @@ class WeatherStationInstance {
                         }
                     }
 
-                    for (byte measurementByte : ByteBuffer.allocate(4).putFloat(currentMeasurement).array()) {
-                        currentWeatherMeasurement[currentWMPointer] = measurementByte;
-                        currentWMPointer += 1;
-                    }
-
-                    addToWeatherDataBuffers(corrIndex, currentMeasurement);
+                    convertedMeasurementToBeSaved = ByteBuffer.allocate(Float.BYTES).putFloat(currentMeasurement).array();
+                    measurementToBeBuffered = currentMeasurement;
                 }
                 else {
-                    // Given measurement could not be converted to a float,
-                    // calculate an expected measurement based on the past measurements present in the buffer
                     if (expectedMeasurement != Float.MIN_VALUE) {
-                        for (byte measurementByte : ByteBuffer.allocate(4).putFloat(expectedMeasurement).array()) {
-                            currentWeatherMeasurement[currentWMPointer] = measurementByte;
-                            currentWMPointer += 1;
-                        }
-
-                        addToWeatherDataBuffers(corrIndex, expectedMeasurement);
+                        convertedMeasurementToBeSaved = ByteBuffer.allocate(Float.BYTES).putFloat(expectedMeasurement).array();
+                        measurementToBeBuffered = expectedMeasurement;
                     }
                     else // Given measurement was incorrect and could not be corrected, discard the measurement
                         discardMeasurement = true;
                 }
             }
             else if (i == 11) {
-                if (measurementString.length() != 0) {
-                    currentWeatherMeasurement[currentWMPointer] = Byte.parseByte(measurementEntry[i], 2);
-                    currentWMPointer += 1;
-                }
-                else {
-                    // Given measurement was missing and cannot be corrected using extrapolation, discard the measurement
+                if (xmlSet[i].length() != 0)
+                    convertedMeasurementToBeSaved = new byte[] { Byte.parseByte(xmlSet[i], 2) };
+                else
                     discardMeasurement = true;
-                }
             }
             else if (i == 13) {
-                if (measurementString.length() != 0) {
-                    for (byte measurementByte : ByteBuffer.allocate(2).putShort(Short.valueOf(measurementEntry[i])).array()) {
-                        currentWeatherMeasurement[currentWMPointer] = measurementByte;
-                        currentWMPointer += 1;
-                    }
+                short measurementToUse = 0;
 
-                    addToWeatherDataBuffers(corrIndex, Short.valueOf(measurementEntry[i]));
-                }
+                if (xmlSet[i].length() != 0)
+                    measurementToUse = Short.parseShort(xmlSet[i]);
                 else {
-                    // Given measurement could not be converted to a short,
                     // calculate an expected measurement based on the past measurements present in the buffer
                     float expectedMeasurement = WeatherMaths.calcLWMA(
-                            getWeatherDataBuffer(corrIndex),
+                            getMeasurementBuffer(corrIndex),
                             WeatherMaths.DataType.SHORT);
 
-                    if (expectedMeasurement != Float.MIN_VALUE) {
-                        for (byte measurementByte : ByteBuffer.allocate(2).putShort((short)expectedMeasurement).array()) {
-                            currentWeatherMeasurement[currentWMPointer] = measurementByte;
-                            currentWMPointer += 1;
-                        }
-
-                        addToWeatherDataBuffers(corrIndex, (short)expectedMeasurement);
-                    }
-                    else // Given measurement was incorrect and could not be corrected, discard the measurement
+                    if (expectedMeasurement != Float.MIN_VALUE)
+                        measurementToUse = (short)expectedMeasurement;
+                    else
                         discardMeasurement = true;
+                }
+
+                convertedMeasurementToBeSaved = ByteBuffer.allocate(Short.BYTES).putShort(measurementToUse).array();
+                measurementToBeBuffered = measurementToUse;
+            }
+
+            // Handle given measurement to be buffered
+            if (measurementToBeBuffered != null)
+                addToBuffers(corrIndex, measurementToBeBuffered);
+
+            // Handle given converted measurement to be saved
+            if (convertedMeasurementToBeSaved != null) {
+                for (byte measurementByte : convertedMeasurementToBeSaved) {
+                    convertedBytesArr[convertedByteArrIndex] = measurementByte;
+                    convertedByteArrIndex += 1;
                 }
             }
 
@@ -150,18 +121,15 @@ class WeatherStationInstance {
                 break;
         }
 
-        if(!discardMeasurement) {
-            currentWeatherMeasurementsArr.add(currentWeatherMeasurement);
-            System.out.println(currentWMPointer);
-            System.out.println(Arrays.toString(currentWeatherMeasurement));
-        }
+        if(!discardMeasurement)
+            parsedMeasurementsArr.add(convertedBytesArr);
     }
 
     /**
-     * Clear all weather measurement objects in the weather measurements array
+     * Clear all parsed measurements in the parsedMeasurementsArr
      */
-    void clearWeatherMeasurements() {
-        currentWeatherMeasurementsArr = new ArrayList<>();
+    void clearParsedMeasurements() {
+        parsedMeasurementsArr = new ArrayList<>();
     }
     // endregion
 
@@ -169,42 +137,42 @@ class WeatherStationInstance {
     // region Buffer operations
 
     // Weather data buffer arrays
-    final static private byte WEATHER_DATA_ARRAY_SIZE = 30;
+    final static private byte MEASUREMENT_BUFFER_ARR_SIZE = 30;
 
-    private Object[][] weatherDataBufferArrs = new Object[10][WEATHER_DATA_ARRAY_SIZE];
-    private byte[] weatherDataBufferPointers = new byte[10];
+    private Object[][] measurementBufferArrs = new Object[10][MEASUREMENT_BUFFER_ARR_SIZE];
+    private byte[] measurementBufferPointerArr = new byte[10];
 
     /**
-     * Adds a measurement to a buffer that corresponds to the given xml index.
-     * @param xmlIndex the index of the current position in the xml file.
-     * @param data the data that should be added to the buffer.
+     * Adds a measurement to a buffer that corresponds to the given XML set index.
+     * @param xmlSetIndex the index of the current position in the xml file.
+     * @param measurement the measurement that should be added to the buffer.
      */
-    private void addToWeatherDataBuffers(byte xmlIndex, Object data) {
-        byte bufferIndex = getWeatherDataBufferIndex(xmlIndex);
+    private void addToBuffers(byte xmlSetIndex, Object measurement) {
+        byte bufferIndex = getMeasurementBufferIndex(xmlSetIndex);
 
         // Update the current buffer
-        byte currentWeatherDataBufferPointer = weatherDataBufferPointers[bufferIndex];
-        weatherDataBufferArrs[bufferIndex][currentWeatherDataBufferPointer] = data;
+        byte currentWeatherDataBufferPointer = measurementBufferPointerArr[bufferIndex];
+        measurementBufferArrs[bufferIndex][currentWeatherDataBufferPointer] = measurement;
         /*System.out.println("Buffer: " + Arrays.toString(weatherDataBufferArrs[bufferIndex])
                 + "\n\tWith buffer index: " + bufferIndex
                 +"\n\tWith pointer: " + currentWeatherDataBufferPointer
-                + "\n\tWith data: " + data);*/
+                + "\n\tWith measurement: " + measurement);*/
 
         // Set the new buffer pointer
         currentWeatherDataBufferPointer += 1;
 
-        if (currentWeatherDataBufferPointer == WEATHER_DATA_ARRAY_SIZE)
-            weatherDataBufferPointers[bufferIndex] = 0;
+        if (currentWeatherDataBufferPointer == MEASUREMENT_BUFFER_ARR_SIZE)
+            measurementBufferPointerArr[bufferIndex] = 0;
         else
-            weatherDataBufferPointers[bufferIndex] = currentWeatherDataBufferPointer;
+            measurementBufferPointerArr[bufferIndex] = currentWeatherDataBufferPointer;
     }
 
     /**
-     * Convert the xmlIndex to a buffer index since some values of the xml don't have to be added to the buffer.
-     * @param xmlIndex the index of the current position in the xml file.
+     * Convert the xmlSetIndex to a buffer index since some values of the xml don't have to be added to the buffer.
+     * @param xmlSetIndex the index of the current position in the xml file.
      * @return the index that can be used to retrieve a buffer.
      */
-    private byte getWeatherDataBufferIndex(byte xmlIndex) {
+    private byte getMeasurementBufferIndex(byte xmlSetIndex) {
         // Get the buffer index
         /* XML to Buffer array conversion table: XML num - offset
         XML Line num    Buffer index num
@@ -212,22 +180,22 @@ class WeatherStationInstance {
             Skip 11, dus + 1 bij de offset
         12 en 13        XML num - 3
          */
-        byte bufferIndex = (byte)(xmlIndex - 2);
+        byte bufferIndex = (byte)(xmlSetIndex - 2);
 
-        if(xmlIndex > 10)
+        if(xmlSetIndex > 10)
             bufferIndex -= 1; // Subtract an extra value according to the XML to Buffer array conversion table
 
         return bufferIndex;
     }
 
     /**
-     * Get a buffer using a given xml index.
-     * @param xmlIndex the index of the current position in the xml file.
+     * Get a buffer using a given XML set index.
+     * @param xmlSetIndex the index of the current position in the XML file.
      * @return the buffer that can be used to add a measurement to.
      */
-    private Object[] getWeatherDataBuffer(byte xmlIndex) {
-        byte bufferIndex = getWeatherDataBufferIndex(xmlIndex);
-        return weatherDataBufferArrs[bufferIndex];
+    private Object[] getMeasurementBuffer(byte xmlSetIndex) {
+        byte bufferIndex = getMeasurementBufferIndex(xmlSetIndex);
+        return measurementBufferArrs[bufferIndex];
     }
     // endregion
 }

@@ -36,17 +36,16 @@ public class GeneratorConnectionThread implements Runnable{
 
             String line;
             byte lineNum = -1;
-            String[] currentMeasurement = new String[14];
+            String[] currentXmlSet = new String[14];
 
             // Loop through each line in the received data
             while ((line = dataIn.readLine()) != null) {
                 if(line.contains("/MEASUREMENT")) {
-                    // Stop reading measurements
-                    lineNum = -1;
+                    lineNum = -1; // Stop reading measurements
 
                     // Send the past read measurements to the matching instance
-                    weatherInstancesManager.updateInstances(currentMeasurement);
-                    currentMeasurement = new String[14];
+                    weatherInstancesManager.updateInstances(currentXmlSet);
+                    currentXmlSet = new String[14];
 
                     continue;
                 }
@@ -62,9 +61,9 @@ public class GeneratorConnectionThread implements Runnable{
                     continue;
                 }
 
-                // If measurements are being read, add the measurement as a String to the currentMeasurement array
+                // If measurements are being read, add the measurement as a String to the currentXmlSet array
                 if(lineNum != -1) {
-                    currentMeasurement[lineNum] = line.substring(line.indexOf(">") + 1, line.indexOf("/") - 1);
+                    currentXmlSet[lineNum] = line.substring(line.indexOf(">") + 1, line.indexOf("/") - 1);
                     lineNum += 1;
                 }
             }
