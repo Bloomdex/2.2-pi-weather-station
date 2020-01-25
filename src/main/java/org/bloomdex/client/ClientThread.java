@@ -1,4 +1,4 @@
-package client;
+package org.bloomdex.client;
 
 import javax.net.ssl.SSLSocket;
 import java.io.*;

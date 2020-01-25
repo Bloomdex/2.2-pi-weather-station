@@ -1,4 +1,4 @@
-package client;
+package org.bloomdex.client;
 
 import java.util.Scanner;
 
