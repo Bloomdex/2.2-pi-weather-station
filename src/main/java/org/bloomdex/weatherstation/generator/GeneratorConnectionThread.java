@@ -40,7 +40,7 @@ public class GeneratorConnectionThread implements Runnable{
 
             // Loop through each line in the received data
             while ((line = dataIn.readLine()) != null) {
-                if(line.contains("/MEASUREMENT")) {
+                if (line.contains("/MEASUREMENT")) {
                     lineNum = -1; // Stop reading measurements
 
                     // Send the past read measurements to the matching instance
@@ -49,12 +49,12 @@ public class GeneratorConnectionThread implements Runnable{
 
                     continue;
                 }
-                else if(line.contains("MEASUREMENT")) {
+                else if (line.contains("MEASUREMENT")) {
                     // Start reading measurements
                     lineNum = 0;
                     continue;
                 }
-                else if(line.contains("/WEATHERDATA")) {
+                else if (line.contains("/WEATHERDATA")) {
                     // Stop reading measurements
                     lineNum = -1;
                     checkThreadActions();
@@ -62,7 +62,7 @@ public class GeneratorConnectionThread implements Runnable{
                 }
 
                 // If measurements are being read, add the measurement as a String to the currentXmlSet array
-                if(lineNum != -1) {
+                if (lineNum != -1) {
                     currentXmlSet[lineNum] = line.substring(line.indexOf(">") + 1, line.indexOf("/") - 1);
                     lineNum += 1;
                 }
@@ -91,9 +91,9 @@ public class GeneratorConnectionThread implements Runnable{
     private void checkThreadActions() {
         byte currentResponsibilityByte = GeneratorConnectionManager.getResponsibilityByte();
 
-        if(responsibilityByte != currentResponsibilityByte) {
+        if (responsibilityByte != currentResponsibilityByte) {
             responsibilityByte = currentResponsibilityByte;
-            weatherInstancesManager.handleData();
+            GeneratorConnectionManager.storeMeasurements(weatherInstancesManager.getMeasurements());
         }
     }
 }

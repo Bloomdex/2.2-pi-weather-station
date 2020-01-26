@@ -6,13 +6,12 @@ import java.net.Socket;
 
 public class ClientThread extends Thread{
     private final Socket socket;
-    private static byte[] data;
+    private byte[] data;
     private DataOutputStream dataOutputStream;
 
     /**
-     * The constructor witch sets the socket and the dataOutputStream
-     *
-     * @param socket the socket witch allows the client to send data
+     * The constructor which sets the socket and dataOutputStream
+     * @param socket the socket that data is being send towards
      * @throws IOException throws an exception if something went wrong with getting the output stream from the socket
      */
     ClientThread(SSLSocket socket) throws IOException {
@@ -21,35 +20,34 @@ public class ClientThread extends Thread{
     }
 
     /**
-     * The function that sends the data
+     * Sends the data to the server
      */
-    public void run() {
+    @Override
+    public synchronized void run() {
         try {
             while(!socket.isClosed()) {
-                synchronized (this) {
-                    this.wait();
-                    dataOutputStream.writeInt(data.length); // write length of the message
-                    dataOutputStream.write(data);
-                    /*
-                    for (int x = 0; x <= data.length - 1; x++) {
-                        System.out.print((char)data[x]);
-                    }
-                    System.out.print("\n");
-                     */
+                this.wait();
+                dataOutputStream.writeInt(data.length); // write length of the message
+                dataOutputStream.write(data);
+                /*
+                for (int x = 0; x <= data.length - 1; x++) {
+                    System.out.print((char)data[x]);
                 }
+                System.out.print("\n");
+                 */
             }
-        } catch (IOException | InterruptedException e) {
+        }
+        catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
-            System.out.printf("exception: %s%n", e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /**
-     * Sets the data witch will be sent
-     *
-     * @param data witch will be sent
+     * Sets the data which will be sent
+     * @param data which will be sent
      */
-    static public void setData(byte[] data) {
-        ClientThread.data = data;
+    public synchronized void setData(byte[] data) {
+        this.data = data;
     }
 }

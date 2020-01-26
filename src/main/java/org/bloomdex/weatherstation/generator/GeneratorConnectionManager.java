@@ -2,6 +2,7 @@ package org.bloomdex.weatherstation.generator;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,6 +33,9 @@ public class GeneratorConnectionManager {
      * Flips the responsibility byte between 0 and 1 for threads to read.
      */
     public static void flipResponsibilityByte() {
+        System.out.println(allMeasurements.size());
+        allMeasurements.clear();
+
         if(responsibilityByte == 0)
             responsibilityByte = 1;
         else
@@ -44,4 +48,13 @@ public class GeneratorConnectionManager {
      * @return the responsibility byte.
      */
     static byte getResponsibilityByte() { return responsibilityByte; }
+
+
+    private static final ArrayList<Byte> allMeasurements = new ArrayList<>();
+
+    static void storeMeasurements(ArrayList<Byte> measurements) {
+        synchronized (allMeasurements) {
+            allMeasurements.addAll(measurements);
+        }
+    }
 }

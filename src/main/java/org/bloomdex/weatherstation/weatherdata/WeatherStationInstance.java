@@ -4,16 +4,18 @@ import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 class WeatherStationInstance {
     // region Measurement operations
 
     private SimpleDateFormat simpleDateFormat;
-    private ArrayList<byte[]> parsedMeasurementsArr = new ArrayList<>();
+    private ArrayList<Byte> parsedMeasurementsArr;
 
     WeatherStationInstance() {
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        parsedMeasurementsArr = new ArrayList<>();
     }
 
     /**
@@ -21,7 +23,7 @@ class WeatherStationInstance {
      * @param xmlSet the XML set that needs to be parsed by and added to the instance.
      */
     void parseXMLSet(String[] xmlSet) {
-        byte[] convertedBytesArr = new byte[47];
+        Byte[] convertedBytesArr = new Byte[47];
         byte convertedByteArrIndex = 0;
         byte corrIndex; // Used when doing buffer operations
         byte xmlLinesSkipped = 0; // Offset used by the corrIndex based on position in the XML set
@@ -122,14 +124,16 @@ class WeatherStationInstance {
         }
 
         if(!discardMeasurement)
-            parsedMeasurementsArr.add(convertedBytesArr);
+            parsedMeasurementsArr.addAll(Arrays.asList(convertedBytesArr));
     }
+
+    ArrayList<Byte> getParsedMeasurementsArr() { return parsedMeasurementsArr; }
 
     /**
      * Clear all parsed measurements in the parsedMeasurementsArr
      */
     void clearParsedMeasurements() {
-        parsedMeasurementsArr = new ArrayList<>();
+        parsedMeasurementsArr.clear();
     }
     // endregion
 

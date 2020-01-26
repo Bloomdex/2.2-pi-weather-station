@@ -1,5 +1,6 @@
 package org.bloomdex.weatherstation.weatherdata;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class WeatherInstancesManager {
@@ -29,10 +30,14 @@ public class WeatherInstancesManager {
     /**
      * Handle all the data in every weather station instance that exists.
      */
-    public void handleData() {
+    public ArrayList<Byte> getMeasurements() {
+        ArrayList<Byte> allMeasurementsArr = new ArrayList<>();
+
         for (WeatherStationInstance weatherStationInstance: weatherStationInstances.values()) {
+            allMeasurementsArr.addAll(weatherStationInstance.getParsedMeasurementsArr());
             weatherStationInstance.clearParsedMeasurements();
-            //weatherStationInstance.clearBuffers();
         }
+
+        return allMeasurementsArr;
     }
 }
