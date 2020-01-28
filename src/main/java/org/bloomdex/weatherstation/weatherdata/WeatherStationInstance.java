@@ -124,7 +124,7 @@ class WeatherStationInstance {
         }
 
         if(!discardMeasurement)
-            parsedMeasurementsArr.addAll(Arrays.asList(convertedBytesArr));
+            WeatherDataManager.storeParsedMeasurementSet(convertedBytesArr);
     }
 
     ArrayList<Byte> getParsedMeasurementsArr() { return parsedMeasurementsArr; }

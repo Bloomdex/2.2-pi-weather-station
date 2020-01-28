@@ -20,10 +20,10 @@ public class CounterManager {
      * Stop the current counter thread, create a new one and call methods that rely on the counter.
      */
     static void resetCounter() {
-        System.out.println("Timer: Done counting, restarting...");
+        System.out.println("------------------------\nTimer: Done counting, restarting...");
         timer.cancel();
         startCounter();
-        GeneratorConnectionManager.flipResponsibilityByte();
+        GeneratorConnectionManager.handleData();
     }
 }
 

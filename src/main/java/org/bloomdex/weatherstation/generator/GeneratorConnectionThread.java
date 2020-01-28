@@ -9,18 +9,14 @@ import java.net.Socket;
 
 public class GeneratorConnectionThread implements Runnable{
     private Socket inputSocket;
-    private byte responsibilityByte;
     private WeatherInstancesManager weatherInstancesManager;
 
     /**
      * Creates a generator connection thread.
      * @param recvSocket the socket that data is received from.
-     * @param connectionManagerResponsibilityByte the current responsibility byte in the connection manager.
      */
-    GeneratorConnectionThread(Socket recvSocket, byte connectionManagerResponsibilityByte){
+    GeneratorConnectionThread(Socket recvSocket){
         inputSocket = recvSocket;
-        responsibilityByte = connectionManagerResponsibilityByte;
-
         weatherInstancesManager = new WeatherInstancesManager();
     }
 
@@ -57,7 +53,6 @@ public class GeneratorConnectionThread implements Runnable{
                 else if (line.contains("/WEATHERDATA")) {
                     // Stop reading measurements
                     lineNum = -1;
-                    checkThreadActions();
                     continue;
                 }
 
@@ -82,18 +77,5 @@ public class GeneratorConnectionThread implements Runnable{
     private void end() {
         // Stop this thread
         Thread.currentThread().interrupt();
-    }
-
-    /**
-     * Checks if thread has to do any actions based on the responsibility byte from the manager
-     * such as clearing buffers and sending data to the server.
-     */
-    private void checkThreadActions() {
-        byte currentResponsibilityByte = GeneratorConnectionManager.getResponsibilityByte();
-
-        if (responsibilityByte != currentResponsibilityByte) {
-            responsibilityByte = currentResponsibilityByte;
-            GeneratorConnectionManager.storeMeasurements(weatherInstancesManager.getMeasurements());
-        }
     }
 }
