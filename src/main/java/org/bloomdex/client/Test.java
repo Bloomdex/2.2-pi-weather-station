@@ -3,23 +3,13 @@ package org.bloomdex.client;
 import java.util.Scanner;
 
 public class Test {
-    private ClientManager clientManager;
-
     /**
      * The constructor of the Test class
      * @throws Exception when something goes wrong with making the client
      */
     Test() throws Exception {
-        // Sets the global variable client
-        clientManager = new ClientManager();
-        // Calls the method sendData witch will handle generation of test data for the client thread
-        sendData();
-    }
+        ClientManager.CreateClient();
 
-    /**
-     * Sends the incoming data from the user to the client
-     */
-    public void sendData() {
         // A new user input scanner will be made
         Scanner in = new Scanner(System.in);
 
@@ -30,10 +20,9 @@ public class Test {
             byte[] byteArray = s.getBytes();
             // Gives the data to the client who'll send this data to the server
             // The client will be notified that there is new data which can be send
-            clientManager.setData(byteArray);
+            ClientManager.setData(byteArray);
         }
     }
-
     /**
      * The main function of the test class
      * @param args there are no arguments that can be given

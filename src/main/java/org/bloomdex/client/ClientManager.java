@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class ClientManager {
-    private static final String[] protocols = new String[]{"TLSv1.3"};
-    private static final String[] cipher_suites = new String[]{"TLS_AES_128_GCM_SHA256"};
+    private static final String[] protocols = new String[] {"TLSv1.2"};
+    private static final String[] cipher_suites = new String[] {"TLS_RSA_WITH_AES_128_CBC_SHA"};
     private static ClientThread clientThread;
     private static int port;
     private static String IP;
@@ -125,8 +125,15 @@ public class ClientManager {
      * @param data the data which will be given to the client thread
      */
     public static void setData(byte[] data) {
-        clientThread.setData(data);
-        clientThread.notify();
+        if (clientThread != null) {
+            synchronized (ClientManager.clientThread) {
+                clientThread.setData(data);
+                clientThread.notify();
+            }
+        }
+        else
+            System.out.println("ClientManager: There is no instantiated client present. " +
+                    "Remove the NC argument to instantiate a client at startup.");
     }
 
     public static void main(String[] args) throws Exception {

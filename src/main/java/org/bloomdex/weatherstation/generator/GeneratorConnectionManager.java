@@ -1,5 +1,6 @@
 package org.bloomdex.weatherstation.generator;
 
+import org.bloomdex.client.ClientManager;
 import org.bloomdex.weatherstation.weatherdata.WeatherDataManager;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class GeneratorConnectionManager {
      * Handle the data gathered by the weather instances by sending it to the server.
      */
     public static void handleData() {
+        ClientManager.setData(WeatherDataManager.getParsedMeasurementSetsPrim());
         System.out.println("Amount of measurements in the past 10 seconds: " + WeatherDataManager.getMeasurementSetAmount());
         System.out.println("Amount of bytes in the past 10 seconds: " + WeatherDataManager.getParsedMeasurementSets().size());
         WeatherDataManager.resetData();

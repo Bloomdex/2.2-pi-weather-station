@@ -23,18 +23,20 @@ public class ClientThread extends Thread{
      * Sends the data to the server
      */
     @Override
-    public synchronized void run() {
+    public void run() {
         try {
             while(!socket.isClosed()) {
-                this.wait();
-                dataOutputStream.writeInt(data.length); // write length of the message
-                dataOutputStream.write(data);
-                /*
-                for (int x = 0; x <= data.length - 1; x++) {
-                    System.out.print((char)data[x]);
+                synchronized (this) {
+                    this.wait();
+                    dataOutputStream.writeInt(data.length); // write length of the message
+                    dataOutputStream.write(data);
+                    /*
+                    for (int x = 0; x <= data.length - 1; x++) {
+                        System.out.print((char)data[x]);
+                    }
+                    System.out.print("\n");
+                     */
                 }
-                System.out.print("\n");
-                 */
             }
         }
         catch (IOException | InterruptedException e) {

@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 class WeatherStationInstance {
@@ -130,7 +129,7 @@ class WeatherStationInstance {
     ArrayList<Byte> getParsedMeasurementsArr() { return parsedMeasurementsArr; }
 
     /**
-     * Clear all parsed measurements in the parsedMeasurementsArr
+     * Clear all parsed measurements in the parsedMeasurementsArr.
      */
     void clearParsedMeasurements() {
         parsedMeasurementsArr.clear();
