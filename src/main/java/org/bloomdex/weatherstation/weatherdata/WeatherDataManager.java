@@ -6,6 +6,7 @@ import java.util.Arrays;
 public class WeatherDataManager {
     private static ArrayList<Byte> parsedMeasurementSets = new ArrayList<>();
     private static int measurementSetAmount = 0;
+    private static long measurementSetMaxAmount = 0;
 
     /**
      * Extends the list holding all parsed measurements with a new parsedMeasurementSet.
@@ -14,6 +15,7 @@ public class WeatherDataManager {
     static void storeParsedMeasurementSet(Byte[] parsedMeasurementSet) {
         synchronized (parsedMeasurementSets) {
             measurementSetAmount += 1;
+            measurementSetMaxAmount += 1;
             parsedMeasurementSets.addAll(Arrays.asList(parsedMeasurementSet));
         }
     }
@@ -39,6 +41,11 @@ public class WeatherDataManager {
      * @return the amount of measurements.
      */
     public static int getMeasurementSetAmount() { return measurementSetAmount; }
+
+    /**
+     * @return the maximum amount of measurements.
+     */
+    public static long getMeasurementSetMaxAmount() { return measurementSetMaxAmount; }
 
     /**
      * Reset all data gathered and value holding amount of measurements.

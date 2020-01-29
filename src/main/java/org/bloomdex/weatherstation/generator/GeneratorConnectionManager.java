@@ -37,6 +37,7 @@ public class GeneratorConnectionManager {
         ClientManager.setData(WeatherDataManager.getParsedMeasurementSetsPrim());
         System.out.println("Amount of measurements in the past 10 seconds: " + WeatherDataManager.getMeasurementSetAmount());
         System.out.println("Amount of bytes in the past 10 seconds: " + WeatherDataManager.getParsedMeasurementSets().size());
+        System.out.println("Amount of measurements in total: " + WeatherDataManager.getMeasurementSetMaxAmount());
         WeatherDataManager.resetData();
     }
 }

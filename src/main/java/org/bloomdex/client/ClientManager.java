@@ -19,7 +19,7 @@ public class ClientManager {
      *      something goes wrong when the client thread is made
      */
     public static void CreateClient() throws Exception {
-        System.setProperty("javax.net.ssl.trustStore", "truststore");
+        System.setProperty("javax.net.ssl.trustStore", "D:/Projects/_School/2.2-pi-weather-station/src/main/java/org/bloomdex/client/truststore");
         System.setProperty("javax.net.ssl.trustStorePassword", "passphrase");
         enterIPAddress();
         enterPort();
