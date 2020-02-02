@@ -75,7 +75,10 @@ public class GeneratorConnectionThread implements Runnable{
      * Handles stoppage of this thread.
      */
     private void end() {
-        // Stop this thread
-        Thread.currentThread().interrupt();
+        try {
+            inputSocket.close();
+            //System.out.println(inputSocket);
+        }
+        catch (IOException e) { e.printStackTrace(); }
     }
 }

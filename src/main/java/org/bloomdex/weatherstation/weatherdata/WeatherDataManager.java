@@ -30,7 +30,8 @@ public class WeatherDataManager {
      */
     public static byte[] getParsedMeasurementSetsPrim() {
         byte[] parsedMeasurementSetsPrim = new byte[parsedMeasurementSets.size()];
-        for(int i = 0; i < parsedMeasurementSets.size(); i++) {
+        System.out.println("THIS IS A TEST OKAY????" + parsedMeasurementSetsPrim.length + " --- " + parsedMeasurementSets.size());
+        for(int i = 0; i < parsedMeasurementSetsPrim.length; i++) {
             parsedMeasurementSetsPrim[i] = parsedMeasurementSets.get(i);
         }
 
