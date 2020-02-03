@@ -30,4 +30,9 @@ class WeatherMaths {
 
         return sumWeightCoefficients / totalWeight;
     }
+
+    /*static float calcEWMA(float lastSMA, float currentMeasurement) {
+        // EMA = [Close - previous EMA] * (2 / n+1) + previous EMA
+        float EMA = (currentMeasurement - closeMeasurement) * (2f / 31f) + closeMeasurement;
+    }*/
 }

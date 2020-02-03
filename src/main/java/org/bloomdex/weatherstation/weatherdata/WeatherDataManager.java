@@ -29,10 +29,14 @@ public class WeatherDataManager {
      * @return the list of parsed measurements consisting of bytes as a primary data type array.
      */
     public static byte[] getParsedMeasurementSetsPrim() {
-        byte[] parsedMeasurementSetsPrim = new byte[parsedMeasurementSets.size()];
+        byte[] parsedMeasurementSetsPrim;
 
-        for(int i = 0; i < parsedMeasurementSetsPrim.length; i++) {
-            parsedMeasurementSetsPrim[i] = parsedMeasurementSets.get(i);
+        synchronized (parsedMeasurementSets) {
+            parsedMeasurementSetsPrim = new byte[parsedMeasurementSets.size()];
+
+            for(int i = 0; i < parsedMeasurementSetsPrim.length; i++) {
+                parsedMeasurementSetsPrim[i] = parsedMeasurementSets.get(i);
+            }
         }
 
         return parsedMeasurementSetsPrim;

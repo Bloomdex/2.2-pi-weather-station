@@ -3,18 +3,15 @@ package org.bloomdex.weatherstation.weatherdata;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 class WeatherStationInstance {
     // region Measurement operations
 
     private SimpleDateFormat simpleDateFormat;
-    private ArrayList<Byte> parsedMeasurementsArr;
 
     WeatherStationInstance() {
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        parsedMeasurementsArr = new ArrayList<>();
     }
 
     /**
@@ -131,7 +128,7 @@ class WeatherStationInstance {
     // region Buffer operations
 
     // Weather data buffer arrays
-    final static private byte MEASUREMENT_BUFFER_ARR_SIZE = 30;
+    private final static byte MEASUREMENT_BUFFER_ARR_SIZE = 30;
 
     private Object[][] measurementBufferArrs = new Object[10][MEASUREMENT_BUFFER_ARR_SIZE];
     private byte[] measurementBufferPointerArr = new byte[10];
