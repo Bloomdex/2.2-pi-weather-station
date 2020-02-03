@@ -21,12 +21,20 @@ public class GeneratorConnectionManager {
             while(!serverSocket.isClosed()) {
                 threadExecutor.execute(new GeneratorConnectionThread(serverSocket.accept()));
             }
-
-            threadExecutor.shutdown();
         }
         catch (IOException e) {
             System.err.println("Problem with given socket: .");
             e.printStackTrace();
+        }
+        finally {
+            try {
+                ClientManager.stopServerFromAPI();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            threadExecutor.shutdown();
         }
     }
 

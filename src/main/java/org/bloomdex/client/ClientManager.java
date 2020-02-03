@@ -1,13 +1,11 @@
 package org.bloomdex.client;
 
+import org.bloomdex.helpers.ResourceHelper;
 import org.json.JSONObject;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
@@ -17,16 +15,21 @@ public class ClientManager {
     private static final String[] protocols = new String[] {"TLSv1.2"};
     private static final String[] cipher_suites = new String[] {"TLS_RSA_WITH_AES_128_CBC_SHA"};
     private static ClientThread clientThread;
+
+    private static String apiUrl;
+    private static String username;
+    private static String password;
+
+    private static String hostname;
     private static int port;
-    private static String IP;
-    private static String serverStatus;
 
     /**
      * Client constructor
      */
     public static void CreateClient() {
-        System.setProperty("javax.net.ssl.trustStore", "D:/Projects/_School/2.2-pi-weather-station/src/main/java/org/bloomdex/client/truststore");
-        System.setProperty("javax.net.ssl.trustStorePassword", "passphrase");
+        apiUrl = ResourceHelper.getConfigProperties().getProperty("server.apiurl");
+        username = ResourceHelper.getConfigProperties().getProperty("server.username");
+        password = ResourceHelper.getConfigProperties().getProperty("server.password");
 
         boolean connectedToServer = false;
         while (!connectedToServer) {
@@ -36,9 +39,9 @@ public class ClientManager {
             }
             catch (IOException e) {
                 System.out.println("Getting the server IP and port using the API did not succeed. " +
-                        "Type 'retry' to retry or fill it in manually.");
+                        "Type 'retry' to retry or fill in server information manually.");
 
-                if(!handleInputIP() || !handleInputPort())
+                if(!handleInputHostname() || !handleInputPort())
                     continue;
             }
 
@@ -59,45 +62,70 @@ public class ClientManager {
      * @throws IOException throws an exception when it couldn't get or read the JSON
      */
     private static void setServerConnFromAPI() throws IOException {
-        URL url = new URL ("https://api.vegaflor.bloomdex.org/api/v1/connection?type=request_connection");
-        String encoding = Base64.getEncoder().encodeToString(("bloomdex-robot:W2ezqVjo5MvLesMmkfLNdzHKWC6YEjBF").getBytes());
+        URL url = new URL (apiUrl);
+        String encoding = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
+        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+        connection.setRequestMethod("GET");
         connection.setDoOutput(true);
-        connection.setRequestProperty  ("Authorization", "Basic " + encoding);
-        InputStream content = (InputStream)connection.getInputStream();
-        BufferedReader in = new BufferedReader (new InputStreamReader(content));
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
+        connection.setRequestProperty("Accept", "application/json");
+
+        InputStream content = connection.getInputStream();
+        BufferedReader in = new BufferedReader(new InputStreamReader(content));
         String line = in.readLine();
+        System.out.println("Got the following server information: " + line);
+
         JSONObject json = new JSONObject(line);
-        System.out.println(line);
         port = json.getInt("port");
-        IP = json.getString("ipAddress");
-        serverStatus = json.getString("response");
     }
 
     /**
-     * Function that allows the user to manually enter the IP address of the server
+     * Stop the server the application is connected to
+     * @throws IOException throws an exception when it couldn't get or read the JSON
      */
-    private static boolean handleInputIP() {
-        boolean ipValidated = false;
-        String IP = "0.0.0.0";
+    public static void stopServerFromAPI() throws IOException {
+        URL url = new URL ("https://api.vegaflor.bloomdex.org/api/v1/connection?type=stop_server");
+        String encoding = Base64.getEncoder().encodeToString(("bloomdex-robot:W2ezqVjo5MvLesMmkfLNdzHKWC6YEjBF").getBytes());
 
-        while (!ipValidated) {
-            System.out.print("IP: ");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
+        connection.setRequestProperty("Accept", "application/json");
+
+        InputStream content = connection.getInputStream();
+        BufferedReader in = new BufferedReader(new InputStreamReader(content));
+        String line = in.readLine();
+
+        JSONObject json = new JSONObject(line);
+        String response = json.getString("response");
+
+        if (response.equals("SUCCESS"))
+            System.out.println("Stopped the server successfully.");
+        if (response.equals("FAILED"))
+            System.out.println("Could not stop the server: " + json.getString("message"));
+    }
+
+    /**
+     * Function that allows the user to manually enter the hostname of the server
+     */
+    private static boolean handleInputHostname() {
+        boolean hostnameValidated = false;
+        String hostname = "api.x.x.org";
+
+        while (!hostnameValidated) {
+            System.out.print("Hostname: ");
             Scanner input = new Scanner(System.in);
-            IP = input.nextLine().trim();
+            hostname = input.nextLine().trim();
 
-            if (IP.equals("retry"))
+            if (hostname.equals("retry"))
                 return false;
             else
-                ipValidated = validateIP(IP);
-
-            if (!ipValidated)
-                System.out.println("The ip was not valid, try again.");
+                hostnameValidated = true;
         }
 
-        ClientManager.IP = IP;
+        ClientManager.hostname = hostname;
         return true;
     }
 
@@ -161,7 +189,7 @@ public class ClientManager {
      * @throws IOException throws an exception when something goes wrong when the SSl socket is made
      */
     private static SSLSocket createSSLSocket() throws IOException {
-        SSLSocket socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(ClientManager.IP, ClientManager.port);
+        SSLSocket socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket("api.vegaflor.bloomdex.org", ClientManager.port);
         socket.setEnabledProtocols(protocols);
         socket.setEnabledCipherSuites(cipher_suites);
 
@@ -182,9 +210,5 @@ public class ClientManager {
         else
             System.out.println("ClientManager: There is no instantiated client present. " +
                     "Remove the NC argument to instantiate a client at startup.");
-    }
-
-    public static void main(String[] args) throws Exception {
-        ClientManager.CreateClient();
     }
 }
