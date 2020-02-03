@@ -62,11 +62,9 @@ public class GeneratorConnectionThread implements Runnable{
                     lineNum += 1;
                 }
             }
-
-            end();
         }
-        catch (IOException e) {
-            e.printStackTrace();
+        catch (IOException ignored) { }
+        finally {
             end();
         }
     }
