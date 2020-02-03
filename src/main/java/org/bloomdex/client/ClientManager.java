@@ -27,7 +27,7 @@ public class ClientManager {
      * Client constructor
      */
     public static void CreateClient() {
-        apiUrl = ResourceHelper.getConfigProperties().getProperty("server.apiurl");
+        apiUrl = ResourceHelper.getConfigProperties().getProperty("server.api_url");
         username = ResourceHelper.getConfigProperties().getProperty("server.username");
         password = ResourceHelper.getConfigProperties().getProperty("server.password");
 
@@ -62,7 +62,7 @@ public class ClientManager {
      * @throws IOException throws an exception when it couldn't get or read the JSON
      */
     private static void setServerConnFromAPI() throws IOException {
-        URL url = new URL (apiUrl);
+        URL url = new URL (apiUrl + "type=request_connection");
         String encoding = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
@@ -85,8 +85,8 @@ public class ClientManager {
      * @throws IOException throws an exception when it couldn't get or read the JSON
      */
     public static void stopServerFromAPI() throws IOException {
-        URL url = new URL ("https://api.vegaflor.bloomdex.org/api/v1/connection?type=stop_server");
-        String encoding = Base64.getEncoder().encodeToString(("bloomdex-robot:W2ezqVjo5MvLesMmkfLNdzHKWC6YEjBF").getBytes());
+        URL url = new URL ( apiUrl + "type=stop_server");
+        String encoding = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
