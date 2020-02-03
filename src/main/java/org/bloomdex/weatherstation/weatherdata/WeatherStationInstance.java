@@ -125,15 +125,6 @@ class WeatherStationInstance {
         if(!discardMeasurement)
             WeatherDataManager.storeParsedMeasurementSet(convertedBytesArr);
     }
-
-    ArrayList<Byte> getParsedMeasurementsArr() { return parsedMeasurementsArr; }
-
-    /**
-     * Clear all parsed measurements in the parsedMeasurementsArr.
-     */
-    void clearParsedMeasurements() {
-        parsedMeasurementsArr.clear();
-    }
     // endregion
 
 
