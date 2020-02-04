@@ -110,17 +110,11 @@ class WeatherStationInstance {
             // Finish parsing this measurement by saving the values or discarding them
             if(!discardMeasurement) {
                 // Handle given measurement and ema to be saved
-                if (measurementToBeSaved != null) {
+                if (measurementToBeSaved != null)
                     setLastMeasurement(corrIndex, measurementToBeSaved);
-                    System.out.println(corrIndex + " - " + measurementToBeSaved);
-                }
 
-
-                if (emaToBeSaved != null) {
+                if (emaToBeSaved != null)
                     setLastEma(corrIndex, emaToBeSaved);
-                    System.out.println(corrIndex + " - " + emaToBeSaved);
-                }
-
 
                 // Handle given converted measurement to be saved
                 if (convertedMeasurementToBeSaved != null) {

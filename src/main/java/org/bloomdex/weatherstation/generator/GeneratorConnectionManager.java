@@ -13,7 +13,7 @@ public class GeneratorConnectionManager {
      * Starts a connection to the generator program and created a thread for every connection opened.
      */
     public static void StartConnection() {
-        ExecutorService threadExecutor = Executors.newFixedThreadPool(801);
+        ExecutorService threadExecutor = Executors.newFixedThreadPool(800);
 
         try {
             ServerSocket serverSocket = new ServerSocket(7789);
